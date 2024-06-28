@@ -75,3 +75,20 @@ exports.postUser = async (req, res) => {
     res.status(500).json({ "success": false });
   }
 }
+
+exports.getVideastes = async (req, res) => {
+  let conn
+  try {
+    conn = await db.pool.getConnection();
+    const getVideastes = await conn.query("SELECT * FROM utilisateurs inner join createurs on uti_id = cre_uti_id")
+    res.status(200).json({ "success": true, "videastes": getVideastes})
+  }    catch (err) {
+    console.log(err)
+    res.status(500).json({ "success": false });
+  }
+  finally {
+    if (conn) {
+      conn.release();
+    }
+  }
+}

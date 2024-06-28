@@ -31,6 +31,7 @@ exports.sessionStart = async (req, res) => {
       // Si c'est une entreprise
     } else if (query[0].ent_nom != null) {
       if (pswHash.verify(password, uti_mdp)) {
+        console.log(query);
         var token = jwt.sign({ 'id': uti_id, 'email': query[0].uti_email, 'nom': query[0].ent_nom, 'siren': query[0].ent_siret, 'adresse': query[0].ent_adresse }, process.env.JWT_KEY, { expiresIn: '4h' })
         res.status(200).cookie('token', token, {
           expires: new Date(Date.now() + 4 * 60 * 60 * 1000),
@@ -83,3 +84,17 @@ exports.sessionLogout = (req, res) => {
     return res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+
+exports.getSession = (req, res) => {
+  var token = req.cookies.token
+  try {
+    jwt.verify(token, process.env.JWT_KEY)
+    var decoded = jwt.decode(token)
+    console.log(decoded);
+    res.status(200).json({role:decoded.role, id: decoded.id, nom: decoded.nom, pseudo: decoded.pseudo, siren: decoded.siren, adresse: decoded.adresse})
+
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({error:'no token'});
+  }
+}
