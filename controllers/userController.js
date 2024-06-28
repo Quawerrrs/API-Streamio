@@ -19,7 +19,6 @@ exports.postUser = async (req, res) => {
         oui = utilise.nb.toString().substring(0, 1);
       })
       if (oui > 0) {
-        console.log("duplicata")
         res.status(403).json({ "email": true });
       } else {
         const insertUtilisateur = await conn.query("INSERT INTO utilisateurs (uti_email,uti_motdepasse,uti_date_creation) VALUES (?,?,?)", [email, passwordHash, date], function (err, result) { })
