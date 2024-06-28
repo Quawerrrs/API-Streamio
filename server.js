@@ -2,6 +2,7 @@ const express = require('express');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const userRoute = require('./routes/userRoute')
+const sessionRoute = require('./routes/sessionRoute');
 const app = express();
 
 // Middleware pour les cookies
@@ -19,6 +20,7 @@ app.use(express.json());
 
 // Routes
 app.use('/api', userRoute);
+app.use('/api', sessionRoute);
 
 app.listen(5000, () => {
   console.log("listening on port 5000");
