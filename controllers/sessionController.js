@@ -24,14 +24,13 @@ exports.sessionStart = async (req, res) => {
           path: "/",
           secure: false,
           sameSite: 'Lax'
-        }).json({ 'success': "loggedin", redirect: "../accueil" })
+        }).json({ 'success': "loggedin", redirect: "createur" })
       } else {
         res.status(401).json({ success: 'wrongpwd' });
       }
       // Si c'est une entreprise
     } else if (query[0].ent_nom != null) {
       if (pswHash.verify(password, uti_mdp)) {
-        console.log(query);
         var token = jwt.sign({ 'id': uti_id, 'email': query[0].uti_email, 'nom': query[0].ent_nom, 'siren': query[0].ent_siret, 'adresse': query[0].ent_adresse }, process.env.JWT_KEY, { expiresIn: '4h' })
         res.status(200).cookie('token', token, {
           expires: new Date(Date.now() + 4 * 60 * 60 * 1000),
@@ -39,7 +38,7 @@ exports.sessionStart = async (req, res) => {
           path: "/",
           secure: false,
           sameSite: 'Lax'
-        }).json({ 'success': "loggedin", redirect: "../accueil" })
+        }).json({ 'success': "loggedin", redirect: "entreprise" })
       } else {
         res.status(401).json({ success: 'wrongpwd' });
       }
@@ -54,7 +53,7 @@ exports.sessionStart = async (req, res) => {
           path: "/",
           secure: false,
           sameSite: 'Lax'
-        }).json({ 'success': "loggedin", redirect: "../admin" })
+        }).json({ 'success': "loggedin", redirect: "admin" })
       } else {
         res.status(401).json({ success: 'wrongpwd' });
       }
@@ -91,7 +90,7 @@ exports.getSession = (req, res) => {
     jwt.verify(token, process.env.JWT_KEY)
     var decoded = jwt.decode(token)
     console.log(decoded);
-    res.status(200).json({role:decoded.role, id: decoded.id, nom: decoded.nom, pseudo: decoded.pseudo, siren: decoded.siren, adresse: decoded.adresse})
+    res.status(200).json({role:decoded.role, id: decoded.id, nom: decoded.nom, pseudo: decoded.pseudo, siren: decoded.siren, adresse: decoded.adresse, code: decoded.code})
 
   } catch (err) {
     console.log(err);

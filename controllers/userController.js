@@ -23,7 +23,7 @@ exports.postUser = async (req, res) => {
       } else {
         const insertUtilisateur = await conn.query("INSERT INTO utilisateurs (uti_email,uti_motdepasse,uti_date_creation) VALUES (?,?,?)", [email, passwordHash, date], function (err, result) { })
         const lastID = await conn.query("SELECT uti_id from utilisateurs order by uti_id desc limit 1")
-        const insertCreateur = await conn.query("INSERT INTO createurs (uti_id,cre_pseudo,cre_nom,cre_prenom) VALUES (?,?,?,?)", [lastID[0].uti_id,name,lastName,firstName])
+        const insertCreateur = await conn.query("INSERT INTO createurs (cre_uti_id,cre_pseudo,cre_nom,cre_prenom) VALUES (?,?,?,?)", [lastID[0].uti_id,name,lastName,firstName])
         res.status(200).json({ "success": true })
       }
     }
@@ -57,7 +57,7 @@ exports.postUser = async (req, res) => {
       } else {
         const insertUtilisateur = await conn.query("INSERT INTO utilisateurs (uti_email,uti_motdepasse,uti_date_creation) VALUES (?,?,?)", [email, passwordHash, date], function (err, result) { })
         const lastID = await conn.query("SELECT uti_id from utilisateurs order by uti_id desc limit 1")
-        const insertEntreprise = await conn.query("INSERT INTO entreprises (uti_id,ent_siret,ent_adresse,ent_nom) VALUES (?,?,?,?)", [lastID[0].uti_id,siren,adresse,name])
+        const insertEntreprise = await conn.query("INSERT INTO entreprises (ent_uti_id,ent_siret,ent_adresse,ent_nom) VALUES (?,?,?,?)", [lastID[0].uti_id,siren,adresse,name])
         res.status(200).json({ "success": true })
       }
 
