@@ -24,7 +24,7 @@ exports.sessionStart = async (req, res) => {
           path: "/",
           secure: false,
           sameSite: 'Lax'
-        }).json({ 'success': "loggedin", redirect: "../accueil" })
+        }).json({ 'success': "loggedin", redirect: "createur" })
       } else {
         res.status(401).json({ success: 'wrongpwd' });
       }
@@ -38,7 +38,7 @@ exports.sessionStart = async (req, res) => {
           path: "/",
           secure: false,
           sameSite: 'Lax'
-        }).json({ 'success': "loggedin", redirect: "../accueil" })
+        }).json({ 'success': "loggedin", redirect: "entreprise" })
       } else {
         res.status(401).json({ success: 'wrongpwd' });
       }
@@ -53,7 +53,7 @@ exports.sessionStart = async (req, res) => {
           path: "/",
           secure: false,
           sameSite: 'Lax'
-        }).json({ 'success': "loggedin", redirect: "../admin" })
+        }).json({ 'success': "loggedin", redirect: "admin" })
       } else {
         res.status(401).json({ success: 'wrongpwd' });
       }
@@ -83,3 +83,17 @@ exports.sessionLogout = (req, res) => {
     return res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+
+exports.getSession = (req, res) => {
+  var token = req.cookies.token
+  try {
+    jwt.verify(token, process.env.JWT_KEY)
+    var decoded = jwt.decode(token)
+    console.log(decoded);
+    res.status(200).json({role:decoded.role, id: decoded.id, nom: decoded.nom, pseudo: decoded.pseudo, siren: decoded.siren, adresse: decoded.adresse, code: decoded.code})
+
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({error:'no token'});
+  }
+}
