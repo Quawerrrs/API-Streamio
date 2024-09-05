@@ -82,6 +82,11 @@ exports.sessionLogout = (req, res) => {
     console.error('Erreur lors de la destruction de la session:', err);
     return res.status(500).json({ error: 'Internal Server Error' });
   }
+  finally {
+    if (conn) {
+      conn.release();
+    }
+  }
 };
 
 exports.getSession = (req, res) => {
@@ -89,11 +94,15 @@ exports.getSession = (req, res) => {
   try {
     jwt.verify(token, process.env.JWT_KEY)
     var decoded = jwt.decode(token)
-    console.log(decoded);
     res.status(200).json({role:decoded.role, id: decoded.id, nom: decoded.nom, pseudo: decoded.pseudo, siren: decoded.siren, adresse: decoded.adresse, code: decoded.code})
 
   } catch (err) {
     console.log(err);
     res.status(500).json({error:'no token'});
+  }
+  finally {
+    if (conn) {
+      conn.release();
+    }
   }
 }
