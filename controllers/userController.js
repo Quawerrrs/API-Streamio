@@ -134,3 +134,21 @@ exports.updateToAdmin = async (req, res) => {
     }
   }
 }
+
+// exports.getUser = async function (req, res) {
+//   let conn
+//   try {
+//     conn = await db.pool.getConnection();
+//     const { uti_id } = req.body
+//     const select = await conn.query(`SELECT * FROM utilisateurs LEFT JOIN createurs ON uti_id = cre_uti_id AND(SELECT COUNT(*) FROM createurs WHERE cre_uti_id = ?) > 0)`);
+//     res.status(200).json({ "success": true, "user": select[0] });
+//   } catch (err) {
+//     console.log(err)
+//     res.status(500).json({ "success": false });
+//   }
+//   finally {
+//     if (conn) {
+//       conn.release();
+//     }
+//   } 
+// }
