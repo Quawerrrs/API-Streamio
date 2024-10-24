@@ -1,5 +1,6 @@
 const { query } = require('express');
 const db = require('../databases/database.js');
+const jwt = require('jsonwebtoken');
 
 /**
  * Add a new channel to the database
@@ -8,14 +9,20 @@ const db = require('../databases/database.js');
  * @returns {Promise<void>}
  */
 exports.addChannel = async (req, res) => {
-  const { utilisateur, email, name, theme1, theme2, theme3, url, subs } = req.body;
-  if (utilisateur != null && email != null && name != null && theme1 != null) {
+  const { cha_email, cha_name, cha_theme_1, cha_theme_2, cha_theme_3, cha_url, cha_subs } = req.body;
+  var token = req.cookies.token;
+  let conn;
+  if (cha_email != null && cha_name != null && cha_theme_1 != null) {
     try {
+      jwt.verify(token, process.env.JWT_KEY)
+      var decoded = jwt.decode(token)
+      
       conn = await db.pool.getConnection();
-      const query = await conn.query('insert into chaines (cha_uti_id,cha_email, cha_name, cha_theme_1, cha_theme_2, cha_theme_3, cha_url, cha_subs) VALUES (?,?,?,?,?,?,?,?)', [utilisateur, email, name, theme1, theme2, theme3, url, subs])
+      const query = await conn.query('insert into chaines (cha_uti_id,cha_email, cha_name, cha_theme_1, cha_theme_2, cha_theme_3, cha_url, cha_subs) VALUES (?,?,?,?,?,?,?,?)', [decoded.id, cha_email, cha_name, cha_theme_1, cha_theme_2, cha_theme_3, cha_url, cha_subs]);
       res.status(200).json({ success: true });
     } catch (err) {
-
+      console.log(err.message);
+      res.status(500).json({ success: false });
     }
     finally {
       if (conn) {

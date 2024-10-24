@@ -140,6 +140,31 @@ exports.updateToAdmin = async (req, res) => {
   }
 }
 
+exports.deleteUser = async (req, res) => {
+  let conn
+  try {
+    conn = await db.pool.getConnection();
+    var token = req.cookies.token;
+    token = jwt.verify(token, process.env.JWT_SECRET);
+    var decoded = jwt.decode(token);
+    if (decoded.type == "createur") {
+      const delCreateur = await conn.query("DELETE FROM createurs WHERE cre_uti_id = ?", [decoded.id]);
+    } else if (decoded.type == "entreprise") {
+      const delEntreprise = await conn.query("DELETE FROM entreprises WHERE ent_uti_id = ?", [decoded.id]);
+    }
+    const delUtilisateur = await conn.query("DELETE FROM utilisateurs WHERE uti_id = ?", [decoded.id]);
+    res.clearCookie('token')
+    res.status(200).json({ "success": true});
+  } catch (err) {
+    console.log(err)
+    res.status(500).json({ "success": false });
+  }
+  finally {
+    if (conn) {
+      conn.release();
+    }
+  }
+}
 // exports.getUser = async function (req, res) {
 //   let conn
 //   try {
