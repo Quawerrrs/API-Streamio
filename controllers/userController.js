@@ -1,5 +1,6 @@
 const db = require('../databases/database.js');
 const pswHash = require('password-hash');
+const jwt = require('jsonwebtoken');
 
 exports.postUser = async (req, res) => {
   let conn;
@@ -161,9 +162,7 @@ exports.updateUser = async function (req, res) {
   let conn
   try {
     conn = await db.pool.getConnection();
-    const { uti_id, email, name, prenom, pseudo, siret, adresse } = req.body
-    console.log(req.body);
-    
+    const { uti_id, email, name, firstName, pseudo, siret, adresse } = req.body    
     const mailUtilise = await conn.query("SELECT COUNT(*) nb  FROM utilisateurs WHERE uti_email = ? AND uti_id != ?", [email, uti_id])
     if (mailUtilise[0].nb > 0) {
       res.status(403).json({ "email": true });
@@ -175,11 +174,26 @@ exports.updateUser = async function (req, res) {
         const updateUser = await conn.query("UPDATE utilisateurs SET uti_email = ? WHERE uti_id = ?", [email, uti_id]);
         if (siret != null) {
           const updateEntreprise = await conn.query("UPDATE entreprises SET ent_nom = ?, ent_siret = ?, ent_adresse = ? WHERE ent_uti_id = ?", [name, siret, adresse, uti_id]);
+          var token = jwt.sign({ 'id': uti_id, 'type': "entreprise", 'email': email, 'nom': name, 'siret': siret, 'adresse': adresse}, process.env.JWT_KEY, { expiresIn: '4h' })
+          res.status(200).cookie('token', token, {
+            expires: new Date(Date.now() + 4 * 60 * 60 * 1000),
+            httpOnly: true,
+            path: "/",
+            secure: false,
+            sameSite: 'Lax'
+          }).json({ "success": true })
         }
         if (pseudo != null) {
-          const updateCreateur = await conn.query("UPDATE createurs SET cre_pseudo = ?, cre_prenom = ?, cre_nom = ? WHERE cre_uti_id = ?", [pseudo, prenom, name, uti_id]);
+          const updateCreateur = await conn.query("UPDATE createurs SET cre_pseudo = ?, cre_prenom = ?, cre_nom = ? WHERE cre_uti_id = ?", [pseudo, firstName, name, uti_id]);
+          var token = jwt.sign({ 'id': uti_id, 'type': "createur", 'email': email, 'prenom': firstName, 'nom': name, 'pseudo': pseudo }, process.env.JWT_KEY, { expiresIn: '4h' })
+          res.status(200).cookie('token', token, {
+            expires: new Date(Date.now() + 4 * 60 * 60 * 1000),
+            httpOnly: true,
+            path: "/",
+            secure: false,
+            sameSite: 'Lax'
+          }).json({ "success": true })
         }
-        res.status(200).json({ "success": true })
       }
     }
   } catch (err) {

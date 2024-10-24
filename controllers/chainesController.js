@@ -51,6 +51,25 @@ exports.getChannelsID = async (req, res) => {
   try {
     conn = await db.pool.getConnection();
     const query = await conn.query("SELECT * from chaines WHERE cha_uti_id = ?", [uti_id])
+    console.log(query);
+    
+    res.status(200).json(query);
+  } catch (err) {
+
+  }
+  finally {
+    if (conn) {
+      conn.release();
+    }
+  }
+}
+exports.getChannelID = async (req, res) => {
+  const { cha_id } = req.body;
+  try {
+    conn = await db.pool.getConnection();
+    const query = await conn.query("SELECT * from chaines WHERE cha_id = ?", [cha_id])
+    console.log(query);
+    
     res.status(200).json(query);
   } catch (err) {
 
@@ -81,7 +100,7 @@ exports.updateChannel = async (req, res) => {
   const { cha_id, cha_email, cha_name, cha_theme_1, cha_theme_2, cha_theme_3, cha_url, cha_subs } = req.body;
   try {
     conn = await db.pool.getConnection();
-    const query = await conn.query("UPDATE chaines SET cha_email, cha_name = ?, cha_theme_1 = ?, cha_theme_2 = ?, cha_theme_3 = ?, cha_url = ?, cha_subs = ? WHERE cha_id = ?", [cha_email, cha_name, cha_theme_1, cha_theme_2, cha_theme_3, cha_url, cha_subs, cha_id])
+    const query = await conn.query("UPDATE chaines SET cha_email = ?, cha_name = ?, cha_theme_1 = ?, cha_theme_2 = ?, cha_theme_3 = ?, cha_url = ?, cha_subs = ? WHERE cha_id = ?", [cha_email, cha_name, cha_theme_1, cha_theme_2, cha_theme_3, cha_url, cha_subs, cha_id])
     res.status(200).json({ success: true });
   } catch (e) {
     console.log(e);
