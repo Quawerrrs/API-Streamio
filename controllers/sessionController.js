@@ -97,6 +97,6 @@ exports.getSession = (req, res) => {
 
   } catch (err) {
     console.log(err);
-    res.status(500).json({ error: 'no token' });
+    res.status(500).json({ error: 'notoken' });
   }
 }
