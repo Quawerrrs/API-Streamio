@@ -17,6 +17,7 @@ exports.sessionStart = async (req, res) => {
       "SELECT * FROM utilisateurs LEFT JOIN createurs ON uti_id = cre_uti_id AND(SELECT COUNT(*) FROM createurs WHERE cre_uti_id = ?) > 0 LEFT JOIN entreprises ON uti_id = ent_uti_id AND(SELECT COUNT(*) FROM entreprises WHERE ent_uti_id = ?) > 0 LEFT JOIN administrateurs ON uti_id = adm_uti_id WHERE uti_id = ?;",
       [queryEmail[0].uti_id, queryEmail[0].uti_id, queryEmail[0].uti_id]
     );
+
     var uti_mdp = query[0].uti_motdepasse;
     var uti_id = query[0].uti_id;
     // Si c'est un créateur
