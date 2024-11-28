@@ -33,16 +33,17 @@ exports.addChannel = async (req, res) => {
 }
 
 exports.getChannels = async (req, res) => {
-  const { start, length } = req.body;
+  const { start, length, search } = req.body;
+  let conn;  
   try {
     conn = await db.pool.getConnection();
-    const query = await conn.query(`SELECT * from chaines LIMIT ${start},${length}`)
-    // resultats = [];
-    // query.map((result) => {
-    //   resultats.push(result);
-    // })
-    // console.log(resultats);
-    res.status(200).json(query);
+    if (search != null) {
+      const query = await conn.query(`SELECT * from chaines WHERE cha_name LIKE '%${search}%' LIMIT ${start},${length}`)
+      res.status(200).json(query);
+    } else {
+      const query = await conn.query(`SELECT * from chaines LIMIT ${start},${length}`)      
+      res.status(200).json(query);
+    }
   } catch (err) {
 
   }

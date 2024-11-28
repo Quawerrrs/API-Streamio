@@ -147,15 +147,12 @@ exports.getSession = (req, res) => {
         pseudo: decoded.pseudo,
         siren: decoded.siren,
         adresse: decoded.adresse,
+        prenom: decoded.prenom,
         code: decoded.code,
         email: decoded.email,
       });
   } catch (err) {
     console.log(err);
     res.status(500).json({ error: 'notoken' });
-  } finally {
-    if (conn) {
-      conn.release();
-    }
-  }
+  } 
 };

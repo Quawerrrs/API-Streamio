@@ -21,8 +21,6 @@ exports.postUser = async (req, res) => {
       } else {
         res.status(500).json({ password: true });
       }
-      console.log(passwordHash);
-
       let date = new Date();
       if (mailUtilise[0].nb > 0) {
         res.status(403).json({ "email": true });
@@ -168,7 +166,7 @@ exports.deleteUser = async (req, res) => {
     }
     const delUtilisateur = await conn.query("DELETE FROM utilisateurs WHERE uti_id = ?", [decoded.id]);
     res.clearCookie('token')
-    res.status(200).json({ "success": true});
+    res.status(200).json({ "success": true });
   } catch (err) {
     console.log(err)
     res.status(500).json({ "success": false });
@@ -247,7 +245,7 @@ exports.getUsers = async (req, res) => {
 
 // userController.js
 // userController.js
-exports.deleteUser = async (req, res) => {
+exports.deleteSpecificUser = async (req, res) => {
   const userId = req.params.id; // Récupération de l'ID de l'utilisateur à supprimer
   let conn;
 
@@ -258,8 +256,20 @@ exports.deleteUser = async (req, res) => {
     console.log("Connexion à la base de données réussie."); // Log de connexion
 
     // Étape 1 : Récupérer le rôle de l'utilisateur
-    const [user] = await conn.query(
-      "SELECT * FROM utilisateurs WHERE uti_id = ?",
+    const [user] = await conn.query(`
+      SELECT u.uti_id, u.uti_email, u.is_blocked, 
+      CASE 
+        WHEN c.cre_uti_id IS NOT NULL THEN 'createurs'         -- Utilisation de 'cre_uti_id' pour createurs
+        WHEN e.ent_uti_id IS NOT NULL THEN 'entreprises'       -- Utilisation de 'ent_uti_id' pour entreprises
+        WHEN a.adm_uti_id IS NOT NULL THEN 'administrateurs'    -- Utilisation de 'adm_uti_id' pour administrateurs
+        ELSE 'non défini'
+      END AS role
+      FROM utilisateurs u
+      LEFT JOIN createurs c ON u.uti_id = c.cre_uti_id        -- Jointure sur 'cre_uti_id'
+      LEFT JOIN entreprises e ON u.uti_id = e.ent_uti_id      -- Jointure sur 'ent_uti_id'
+      LEFT JOIN administrateurs a ON u.uti_id = a.adm_uti_id   -- Jointure sur 'adm_uti_id'
+      WHERE u.uti_id = ?
+    `,
       [userId]
     );
 
@@ -276,24 +286,22 @@ exports.deleteUser = async (req, res) => {
 
     // Étape 2 : Supprimer l'utilisateur de la table correspondant à son rôle
     let deleteRoleQuery = "";
-    if (user[0].uti_role === "createurs") {
+    if (user.role === "createurs") {
       // Correction ici pour utiliser le bon champ
       deleteRoleQuery = "DELETE FROM createurs WHERE cre_uti_id = ?";
-    } else if (user[0].uti_role === "entreprises") {
+    } else if (user.role === "entreprises") {
       // Correction ici pour utiliser le bon champ
       deleteRoleQuery = "DELETE FROM entreprises WHERE ent_uti_id = ?";
-    } else if (user[0].uti_role === "administrateurs") {
+    } else if (user.role === "administrateurs") {
       // Correction ici pour utiliser le bon champ
       deleteRoleQuery = "DELETE FROM administrateurs WHERE adm_uti_id = ?";
     }
 
     // Exécuter la requête de suppression du rôle
-    if (deleteRoleQuery) {
-      console.log(
-        `Suppression de l'utilisateur de la table de rôle: ${deleteRoleQuery}`
-      ); // Log de la requête de suppression
-      await conn.query(deleteRoleQuery, [userId]);
-    }
+    console.log(
+      `Suppression de l'utilisateur de la table de rôle: ${deleteRoleQuery}`
+    ); // Log de la requête de suppression
+    await conn.query(deleteRoleQuery, [userId]);
 
     // Étape 3 : Supprimer l'utilisateur de la table utilisateurs
     await conn.query("DELETE FROM utilisateurs WHERE uti_id = ?", [userId]);
@@ -347,19 +355,19 @@ exports.updateUser = async function (req, res) {
   let conn
   try {
     conn = await db.pool.getConnection();
-    const { uti_id, email, name, firstName, pseudo, siret, adresse } = req.body    
+    const { uti_id, email, name, firstName, pseudo, siret, adresse } = req.body
     const mailUtilise = await conn.query("SELECT COUNT(*) nb  FROM utilisateurs WHERE uti_email = ? AND uti_id != ?", [email, uti_id])
     if (mailUtilise[0].nb > 0) {
       res.status(403).json({ "email": true });
     } else {
-      const pseudoUtilise = await conn.query("SELECT COUNT(*) nb  FROM createurs WHERE cre_pseudo = ? AND cre_uti_id != ?", [pseudo, uti_id])      
+      const pseudoUtilise = await conn.query("SELECT COUNT(*) nb  FROM createurs WHERE cre_pseudo = ? AND cre_uti_id != ?", [pseudo, uti_id])
       if (pseudoUtilise[0].nb > 0) {
         res.status(403).json({ "pseudo": true });
       } else {
         const updateUser = await conn.query("UPDATE utilisateurs SET uti_email = ? WHERE uti_id = ?", [email, uti_id]);
         if (siret != null) {
           const updateEntreprise = await conn.query("UPDATE entreprises SET ent_nom = ?, ent_siret = ?, ent_adresse = ? WHERE ent_uti_id = ?", [name, siret, adresse, uti_id]);
-          var token = jwt.sign({ 'id': uti_id, 'type': "entreprise", 'email': email, 'nom': name, 'siret': siret, 'adresse': adresse}, process.env.JWT_KEY, { expiresIn: '4h' })
+          var token = jwt.sign({ 'id': uti_id, 'type': "entreprise", 'email': email, 'nom': name, 'siret': siret, 'adresse': adresse }, process.env.JWT_KEY, { expiresIn: '4h' })
           res.status(200).cookie('token', token, {
             expires: new Date(Date.now() + 4 * 60 * 60 * 1000),
             httpOnly: true,
