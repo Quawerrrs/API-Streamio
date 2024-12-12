@@ -1,7 +1,6 @@
-
-const db = require('../databases/database.js');
-const pswHash = require('password-hash');
-const jwt = require('jsonwebtoken');
+const db = require("../databases/database.js");
+const pswHash = require("password-hash");
+const jwt = require("jsonwebtoken");
 
 exports.postUser = async (req, res) => {
   let conn;
@@ -23,16 +22,28 @@ exports.postUser = async (req, res) => {
       }
       let date = new Date();
       if (mailUtilise[0].nb > 0) {
-        res.status(403).json({ "email": true });
+        res.status(403).json({ email: true });
       } else {
-        const pseudoUtilise = await conn.query("SELECT COUNT(*) nb  FROM createurs WHERE cre_pseudo = ?", [name])
+        const pseudoUtilise = await conn.query(
+          "SELECT COUNT(*) nb  FROM createurs WHERE cre_pseudo = ?",
+          [name]
+        );
         if (pseudoUtilise[0].nb > 0) {
-          res.status(403).json({ "pseudo": true });
+          res.status(403).json({ pseudo: true });
         } else {
-          const insertUtilisateur = await conn.query("INSERT INTO utilisateurs (uti_email,uti_motdepasse,uti_date_creation) VALUES (?,?,?)", [email, passwordHash, date], function (err, result) { })
-          const lastID = await conn.query("SELECT uti_id from utilisateurs order by uti_id desc limit 1")
-          const insertCreateur = await conn.query("INSERT INTO createurs (cre_uti_id,cre_pseudo,cre_nom,cre_prenom) VALUES (?,?,?,?)", [lastID[0].uti_id, name, lastName, firstName])
-          res.status(200).json({ "success": true })
+          const insertUtilisateur = await conn.query(
+            "INSERT INTO utilisateurs (uti_email,uti_motdepasse,uti_date_creation) VALUES (?,?,?)",
+            [email, passwordHash, date],
+            function (err, result) {}
+          );
+          const lastID = await conn.query(
+            "SELECT uti_id from utilisateurs order by uti_id desc limit 1"
+          );
+          const insertCreateur = await conn.query(
+            "INSERT INTO createurs (cre_uti_id,cre_pseudo,cre_nom,cre_prenom) VALUES (?,?,?,?)",
+            [lastID[0].uti_id, name, lastName, firstName]
+          );
+          res.status(200).json({ success: true });
         }
       }
     } catch (err) {
@@ -46,9 +57,14 @@ exports.postUser = async (req, res) => {
   } else if (req.body.userType === "entreprise") {
     try {
       conn = await db.pool.getConnection();
-      const { name, email, password, siret, adresse } = req.body
-      const mailUtilise = await conn.query("SELECT COUNT(*) nb  FROM utilisateurs WHERE uti_email = ?", [email])
-      var reg = new RegExp(/^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*£§_-]).{8,}$/)
+      const { name, email, password, siret, adresse } = req.body;
+      const mailUtilise = await conn.query(
+        "SELECT COUNT(*) nb  FROM utilisateurs WHERE uti_email = ?",
+        [email]
+      );
+      var reg = new RegExp(
+        /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*£§_-]).{8,}$/
+      );
       if (reg.test(password)) {
         var passwordHash = pswHash.generate(password);
       } else {
@@ -62,10 +78,19 @@ exports.postUser = async (req, res) => {
         console.log("duplicata");
         res.status(403).json({ email: true });
       } else {
-        const insertUtilisateur = await conn.query("INSERT INTO utilisateurs (uti_email,uti_motdepasse,uti_date_creation) VALUES (?,?,?)", [email, passwordHash, date], function (err, result) { })
-        const lastID = await conn.query("SELECT uti_id from utilisateurs order by uti_id desc limit 1")
-        const insertEntreprise = await conn.query("INSERT INTO entreprises (ent_uti_id,ent_siret,ent_adresse,ent_nom) VALUES (?,?,?,?)", [lastID[0].uti_id, siret, adresse, name])
-        res.status(200).json({ "success": true })
+        const insertUtilisateur = await conn.query(
+          "INSERT INTO utilisateurs (uti_email,uti_motdepasse,uti_date_creation) VALUES (?,?,?)",
+          [email, passwordHash, date],
+          function (err, result) {}
+        );
+        const lastID = await conn.query(
+          "SELECT uti_id from utilisateurs order by uti_id desc limit 1"
+        );
+        const insertEntreprise = await conn.query(
+          "INSERT INTO entreprises (ent_uti_id,ent_siret,ent_adresse,ent_nom) VALUES (?,?,?,?)",
+          [lastID[0].uti_id, siret, adresse, name]
+        );
+        res.status(200).json({ success: true });
       }
     } catch (err) {
       console.log(err);
@@ -153,30 +178,40 @@ exports.updateToAdmin = async (req, res) => {
 };
 
 exports.deleteUser = async (req, res) => {
-  let conn
+  let conn;
   try {
     conn = await db.pool.getConnection();
     var token = req.cookies.token;
     token = jwt.verify(token, process.env.JWT_SECRET);
     var decoded = jwt.decode(token);
+    console.log(decoded);
+
     if (decoded.type == "createur") {
-      const delCreateur = await conn.query("DELETE FROM createurs WHERE cre_uti_id = ?", [decoded.id]);
+      const delCreateur = await conn.query(
+        "DELETE FROM createurs WHERE cre_uti_id = ?",
+        [decoded.id]
+      );
     } else if (decoded.type == "entreprise") {
-      const delEntreprise = await conn.query("DELETE FROM entreprises WHERE ent_uti_id = ?", [decoded.id]);
+      const delEntreprise = await conn.query(
+        "DELETE FROM entreprises WHERE ent_uti_id = ?",
+        [decoded.id]
+      );
     }
-    const delUtilisateur = await conn.query("DELETE FROM utilisateurs WHERE uti_id = ?", [decoded.id]);
-    res.clearCookie('token')
-    res.status(200).json({ "success": true });
+    const delUtilisateur = await conn.query(
+      "DELETE FROM utilisateurs WHERE uti_id = ?",
+      [decoded.id]
+    );
+    res.clearCookie("token");
+    res.status(200).json({ success: true });
   } catch (err) {
-    console.log(err)
-    res.status(500).json({ "success": false });
-  }
-  finally {
+    console.log(err);
+    res.status(500).json({ success: false });
+  } finally {
     if (conn) {
       conn.release();
     }
   }
-}
+};
 // exports.getUser = async function (req, res) {
 //   let conn
 //   try {
@@ -256,7 +291,8 @@ exports.deleteSpecificUser = async (req, res) => {
     console.log("Connexion à la base de données réussie."); // Log de connexion
 
     // Étape 1 : Récupérer le rôle de l'utilisateur
-    const [user] = await conn.query(`
+    const [user] = await conn.query(
+      `
       SELECT u.uti_id, u.uti_email, u.is_blocked, 
       CASE 
         WHEN c.cre_uti_id IS NOT NULL THEN 'createurs'         -- Utilisation de 'cre_uti_id' pour createurs
@@ -352,50 +388,87 @@ exports.blockUser = async (req, res) => {
 };
 
 exports.updateUser = async function (req, res) {
-  let conn
+  let conn;
   try {
     conn = await db.pool.getConnection();
-    const { uti_id, email, name, firstName, pseudo, siret, adresse } = req.body
-    const mailUtilise = await conn.query("SELECT COUNT(*) nb  FROM utilisateurs WHERE uti_email = ? AND uti_id != ?", [email, uti_id])
+    const { uti_id, email, name, firstName, pseudo, siret, adresse } = req.body;
+    // Vérification email unique
+    const mailUtilise = await conn.query(
+      "SELECT COUNT(*) nb FROM utilisateurs WHERE uti_email = ? AND uti_id != ?",
+      [email, uti_id]
+    );
+
     if (mailUtilise[0].nb > 0) {
-      res.status(403).json({ "email": true });
-    } else {
-      const pseudoUtilise = await conn.query("SELECT COUNT(*) nb  FROM createurs WHERE cre_pseudo = ? AND cre_uti_id != ?", [pseudo, uti_id])
-      if (pseudoUtilise[0].nb > 0) {
-        res.status(403).json({ "pseudo": true });
-      } else {
-        const updateUser = await conn.query("UPDATE utilisateurs SET uti_email = ? WHERE uti_id = ?", [email, uti_id]);
-        if (siret != null) {
-          const updateEntreprise = await conn.query("UPDATE entreprises SET ent_nom = ?, ent_siret = ?, ent_adresse = ? WHERE ent_uti_id = ?", [name, siret, adresse, uti_id]);
-          var token = jwt.sign({ 'id': uti_id, 'type': "entreprise", 'email': email, 'nom': name, 'siret': siret, 'adresse': adresse }, process.env.JWT_KEY, { expiresIn: '4h' })
-          res.status(200).cookie('token', token, {
-            expires: new Date(Date.now() + 4 * 60 * 60 * 1000),
-            httpOnly: true,
-            path: "/",
-            secure: false,
-            sameSite: 'Lax'
-          }).json({ "success": true })
-        }
-        if (pseudo != null) {
-          const updateCreateur = await conn.query("UPDATE createurs SET cre_pseudo = ?, cre_prenom = ?, cre_nom = ? WHERE cre_uti_id = ?", [pseudo, firstName, name, uti_id]);
-          var token = jwt.sign({ 'id': uti_id, 'type': "createur", 'email': email, 'prenom': firstName, 'nom': name, 'pseudo': pseudo }, process.env.JWT_KEY, { expiresIn: '4h' })
-          res.status(200).cookie('token', token, {
-            expires: new Date(Date.now() + 4 * 60 * 60 * 1000),
-            httpOnly: true,
-            path: "/",
-            secure: false,
-            sameSite: 'Lax'
-          }).json({ "success": true })
-        }
-      }
+      return res.status(403).json({ email: true });
     }
+
+    // Mise à jour email utilisateur
+    await conn.query("UPDATE utilisateurs SET uti_email = ? WHERE uti_id = ?", [
+      email,
+      uti_id,
+    ]);
+
+    // Mise à jour selon le type d'utilisateur
+    if (siret != null) {
+      await conn.query(
+        "UPDATE entreprises SET ent_nom = ?, ent_siret = ?, ent_adresse = ? WHERE ent_uti_id = ?",
+        [name, siret, adresse, uti_id]
+      );
+
+      const token = jwt.sign(
+        {
+          id: uti_id,
+          type: "entreprise",
+          email,
+          nom: name,
+          siret,
+          adresse,
+        },
+        process.env.JWT_KEY,
+        { expiresIn: "4h" }
+      );
+
+      return res.json({ success: true });
+    }
+
+    if (pseudo != null) {
+      await conn.query(
+        "UPDATE createurs SET cre_pseudo = ?, cre_prenom = ?, cre_nom = ? WHERE cre_uti_id = ?",
+        [pseudo, firstName, name, uti_id]
+      );
+
+      const token = jwt.sign(
+        {
+          id: uti_id,
+          type: "createur",
+          email,
+          prenom: firstName,
+          nom: name,
+          pseudo,
+        },
+        process.env.JWT_KEY,
+        { expiresIn: "4h" }
+      );
+
+      return res
+        .cookie("token", token, {
+          expires: new Date(Date.now() + 4 * 60 * 60 * 1000),
+          httpOnly: true,
+          path: "/",
+          secure: false,
+          sameSite: "Lax",
+        })
+        .json({ success: true });
+    }
+
+    // Cas par défaut si aucun type spécifié
+    res
+      .status(400)
+      .json({ success: false, message: "Type de mise à jour non spécifié" });
   } catch (err) {
-    console.log(err)
-    res.status(500).json({ "success": false });
+    console.error("Erreur de mise à jour:", err);
+    res.status(500).json({ success: false, message: err.message });
+  } finally {
+    if (conn) conn.release();
   }
-  finally {
-    if (conn) {
-      conn.release();
-    }
-  }
-}
+};

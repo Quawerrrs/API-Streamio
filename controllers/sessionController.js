@@ -57,7 +57,7 @@ exports.sessionStart = async (req, res) => {
             type: "entreprise",
             email: query[0].uti_email,
             nom: query[0].ent_nom,
-            siren: query[0].ent_siret,
+            siret: query[0].ent_siret,
             adresse: query[0].ent_adresse,
           },
           process.env.JWT_KEY,
@@ -125,10 +125,6 @@ exports.sessionLogout = (req, res) => {
   } catch (err) {
     console.error("Erreur lors de la destruction de la session:", err);
     return res.status(500).json({ error: "Internal Server Error" });
-  } finally {
-    if (conn) {
-      conn.release();
-    }
   }
 };
 
@@ -137,22 +133,20 @@ exports.getSession = (req, res) => {
   try {
     jwt.verify(token, process.env.JWT_KEY);
     var decoded = jwt.decode(token);
-    res
-      .status(200)
-      .json({
-        role: decoded.role,
-        type: decoded.type,
-        id: decoded.id,
-        nom: decoded.nom,
-        pseudo: decoded.pseudo,
-        siren: decoded.siren,
-        adresse: decoded.adresse,
-        prenom: decoded.prenom,
-        code: decoded.code,
-        email: decoded.email,
-      });
+    res.status(200).json({
+      role: decoded.role,
+      type: decoded.type,
+      id: decoded.id,
+      nom: decoded.nom,
+      pseudo: decoded.pseudo,
+      siret: decoded.siret,
+      adresse: decoded.adresse,
+      prenom: decoded.prenom,
+      code: decoded.code,
+      email: decoded.email,
+    });
   } catch (err) {
     console.log(err);
-    res.status(500).json({ error: 'notoken' });
-  } 
+    res.status(500).json({ error: "notoken" });
+  }
 };

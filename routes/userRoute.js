@@ -8,7 +8,7 @@ router.post("/ajoutuser", userController.postUser);
 router.get("/getVideastes", userController.getVideastes);
 router.get("/getEntreprises", userController.getEntreprises);
 router.get("/updateToAdmin", userController.updateToAdmin);
-router.post('/updateUser', userController.updateUser);
+router.patch("/updateUser", userController.updateUser);
 router.delete("/deleteUser", userController.deleteUser);
 // Nouvelle route pour obtenir tous les utilisateurs
 router.get("/getUsers", userController.getUsers); // Ajout de cette ligne
@@ -18,6 +18,5 @@ router.get("/getUsers", userController.getUsers); // Ajout de cette ligne
 router.delete("/deleteUser/:id", userController.deleteSpecificUser); // Assure-toi que cette ligne existe
 // userRoutes.js
 router.post("/blockUser/:id", userController.blockUser);
-
 
 module.exports = router;
