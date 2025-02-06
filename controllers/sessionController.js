@@ -134,8 +134,10 @@ exports.sessionLogout = (req, res) => {
 exports.getSession = (req, res) => {
   var token = req.cookies.token;
   try {
-    jwt.verify(token, process.env.JWT_KEY);
-    var decoded = jwt.decode(token);
+    if (jwt.verify(token, process.env.JWT_KEY)) var decoded = jwt.decode(token);
+    else {
+      res.status(401).json({ success: "notoken" });
+    }
     res.status(200).json({
       role: decoded.role,
       type: decoded.type,

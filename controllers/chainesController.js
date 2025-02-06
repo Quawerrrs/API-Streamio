@@ -108,9 +108,16 @@ exports.getChannelsID = async (req, res) => {
   try {
     conn = await db.pool.getConnection();
     const query = await conn.query(
-      "SELECT * from chaines WHERE cha_uti_id = ?",
+      "SELECT chaines.*, count(CASE WHEN dem_valide = 1 Then dem_id END) as placements from chaines left join demandes on cha_id = dem_chaine_id WHERE cha_uti_id = ? group by cha_id",
       [uti_id]
     );
+    for (let i = 0; i < query.length; i++) {
+      var placements = await conn.query(
+        "SELECT dem_id, dem_description, dem_prix, cha_name, ent_nom, dem_date_limite, pro_img, pro_nom FROM demandes inner join produits on dem_pro_id = pro_id inner join chaines on dem_chaine_id = cha_id inner join entreprises on dem_ent_uti_id = ent_uti_id WHERE dem_chaine_id = ? AND dem_valide = 1 AND dem_refus =0",
+        [query[i].cha_id]
+      );
+      query[i].placements = placements;
+    }
     res.status(200).json(query);
   } catch (err) {
   } finally {
