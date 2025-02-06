@@ -20,6 +20,9 @@ exports.sessionStart = async (req, res) => {
 
     var uti_mdp = query[0].uti_motdepasse;
     var uti_id = query[0].uti_id;
+    if (query[0].uti_mdp_oublie) {
+      res.status(200).json({ success: "changeMdp", redirect: "changeMdp" });
+    }
     // Si c'est un créateur
     if (query[0].cre_pseudo != null) {
       if (pswHash.verify(password, uti_mdp)) {

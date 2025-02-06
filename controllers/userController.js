@@ -1,6 +1,8 @@
 const db = require("../databases/database.js");
 const pswHash = require("password-hash");
 const jwt = require("jsonwebtoken");
+const generatePassword = require("../lib/password.js");
+const nodemailer = require("nodemailer");
 
 exports.postUser = async (req, res) => {
   let conn;
@@ -468,6 +470,85 @@ exports.updateUser = async function (req, res) {
   } catch (err) {
     console.error("Erreur de mise à jour:", err);
     res.status(500).json({ success: false, message: err.message });
+  } finally {
+    if (conn) conn.release();
+  }
+};
+
+exports.resetPassword = async (req, res) => {
+  const { email } = req.body;
+  let conn;
+  console.log(email);
+
+  try {
+    conn = await db.pool.getConnection();
+    const user = await conn.query(
+      "SELECT * FROM utilisateurs WHERE uti_email = ?",
+      [email]
+    );
+    if (user.length === 0) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Utilisateur non trouvé." });
+    }
+    const newPsw = generatePassword();
+    console.log(newPsw);
+
+    const transporter = nodemailer.createTransport({
+      host: "smtp.office365.com",
+      port: 587,
+      secure: false, // true for port 465, false for other ports
+      auth: {
+        user: "artuslavierichard@iscio.com",
+        pass: "bc4zROHf",
+      },
+    });
+    // send mail with defined transport object
+    const info = await transporter.sendMail({
+      from: '"SteamIO SupportTeam" <support@sreamio.email>', // sender address
+      to: email, // list of receivers
+      subject: "Mot de passe oublie Streamio", // Subject line
+      text: "Bonjour vous avez demandé un nouveau mot de passe", // plain text body
+      html: `<b>Voici votre nouveau mot de passe : ${newPsw}</b>`, // html body
+    });
+    console.log("Message sent: %s", info.messageId);
+    const pswHash = pswHash.generate(newPsw);
+    await conn.query(
+      "UPDATE utilisateurs SET uti_password = ?, uti_mdp_oublie = 1 WHERE uti_email = ?",
+      [pswHash, email]
+    );
+  } catch (err) {
+    console.error("Erreur mail :", err);
+    return res.status(500).json({
+      success: false,
+      message: "Une erreur s'est produite lors de l'envoie de mail.",
+    });
+  } finally {
+    if (conn) conn.release();
+  }
+};
+
+exports.ChangePassword = async (req, res) => {
+  let conn;
+  const { newPassword, confirmPassword, email } = req.body;
+  try {
+    conn = await db.pool.getConnection();
+    var reg = new RegExp(
+      /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*£§_-]).{8,}$/
+    );
+    if (newPassword == confirmPassword) {
+      if (reg.test(newPassword)) {
+        var passwordHash = pswHash.generate(newPassword);
+      } else {
+        res.status(500).json({ password: true });
+      }
+    }
+    await conn.query(
+      "UPDATE utilisateurs SET uti_password = ?, uti_mdp_oublie = 0 WHERE uti_email = ?",
+      [passwordHash, email]
+    );
+    res.json({ success: true });
+  } catch (e) {
   } finally {
     if (conn) conn.release();
   }

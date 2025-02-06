@@ -52,20 +52,48 @@ exports.addChannel = async (req, res) => {
 };
 
 exports.getChannels = async (req, res) => {
-  const { start, length, search } = req.body;
+  const { start, length, search, sortCategory, sortOrder, subscribers } =
+    req.body;
   let conn;
+  if (subscribers == null || subscribers == "") {
+    subscribers == 0;
+  }
+  console.log(start, length, search, sortCategory, sortOrder, subscribers);
+
   try {
     conn = await db.pool.getConnection();
     if (search != null) {
-      const query = await conn.query(
-        `SELECT * from chaines WHERE cha_name LIKE '%${search}%' LIMIT ${start},${length}`
-      );
-      res.status(200).json(query);
+      if (sortCategory != null) {
+        const query = await conn.query(
+          `SELECT * from chaines WHERE cha_name LIKE '%${search}%' AND cha_subs >= ${
+            subscribers * 1000
+          } ORDER BY cha_theme_1 ${sortOrder} LIMIT ${start},${length}`
+        );
+        res.status(200).json(query);
+      } else {
+        const query = await conn.query(
+          `SELECT * from chaines WHERE cha_name LIKE '%${search}%' AND cha_subs >= ${
+            subscribers * 1000
+          } LIMIT ${start},${length}`
+        );
+        res.status(200).json(query);
+      }
     } else {
-      const query = await conn.query(
-        `SELECT * from chaines LIMIT ${start},${length}`
-      );
-      res.status(200).json(query);
+      if (sortCategory == "theme") {
+        const query = await conn.query(
+          `SELECT * from chaines WHERE cha_subs >= ${
+            subscribers * 1000
+          } ORDER BY cha_theme_1 ${sortOrder} LIMIT ${start},${length}`
+        );
+        res.status(200).json(query);
+      } else {
+        const query = await conn.query(
+          `SELECT * from chaines WHERE cha_subs >= ${
+            subscribers * 1000
+          } LIMIT ${start},${length}`
+        );
+        res.status(200).json(query);
+      }
     }
   } catch (err) {
   } finally {

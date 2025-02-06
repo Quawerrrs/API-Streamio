@@ -10,6 +10,7 @@ router.get("/getEntreprises", userController.getEntreprises);
 router.get("/updateToAdmin", userController.updateToAdmin);
 router.patch("/updateUser", userController.updateUser);
 router.delete("/deleteUser", userController.deleteUser);
+router.post("/resetPassword", userController.resetPassword);
 // Nouvelle route pour obtenir tous les utilisateurs
 router.get("/getUsers", userController.getUsers); // Ajout de cette ligne
 
