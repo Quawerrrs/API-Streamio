@@ -18,7 +18,11 @@ exports.addChannel = async (req, res) => {
     cha_url,
     cha_subs,
   } = req.body;
-  var token = req.cookies.token;
+  if (req.cookies.token != null && req.cookies.token != undefined) {
+    var token = req.cookies.token;
+  } else {
+    res.status(500).json({ success: false, message: "token Invalide" });
+  }
   let conn;
   if (cha_email != null && cha_name != null && cha_theme_1 != null) {
     try {

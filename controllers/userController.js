@@ -183,7 +183,12 @@ exports.deleteUser = async (req, res) => {
   let conn;
   try {
     conn = await db.pool.getConnection();
-    var token = req.cookies.token;
+
+    if (req.cookies.token != null && req.cookies.token != undefined) {
+      var token = req.cookies.token;
+    } else {
+      res.status(500).json({ success: false, message: "token Invalide" });
+    }
     token = jwt.verify(token, process.env.JWT_SECRET);
     var decoded = jwt.decode(token);
     console.log(decoded);
@@ -290,7 +295,6 @@ exports.deleteSpecificUser = async (req, res) => {
 
   try {
     conn = await db.pool.getConnection(); // Obtenir une connexion à la base de données
-    console.log("Connexion à la base de données réussie."); // Log de connexion
 
     // Étape 1 : Récupérer le rôle de l'utilisateur
     const [user] = await conn.query(

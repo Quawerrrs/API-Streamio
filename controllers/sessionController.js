@@ -23,6 +23,9 @@ exports.sessionStart = async (req, res) => {
     if (query[0].uti_mdp_oublie) {
       res.status(200).json({ success: "changeMdp", redirect: "changeMdp" });
     }
+    if (query[0].is_blocked === 1) {
+      res.status(200).json({ success: true, is_blocked: true });
+    }
     // Si c'est un créateur
     if (query[0].cre_pseudo != null) {
       if (pswHash.verify(password, uti_mdp)) {
@@ -127,18 +130,23 @@ exports.sessionLogout = (req, res) => {
     res.status(200).json({ redirect: "/login" });
   } catch (err) {
     console.error("Erreur lors de la destruction de la session:", err);
-    return res.status(500).json({ error: "Internal Server Error" });
+    return res
+      .status(500)
+      .json({ success: false, error: "Internal Server Error" });
   }
 };
 
 exports.getSession = (req, res) => {
   var token = req.cookies.token;
+  if (token == null || token == undefined)
+    return res.status(403).json({ success: false, error: "notoken" });
   try {
     if (jwt.verify(token, process.env.JWT_KEY)) var decoded = jwt.decode(token);
     else {
-      res.status(401).json({ success: "notoken" });
+      res.status(401).json({ success: false, message: "token Invalide" });
     }
     res.status(200).json({
+      success: true,
       role: decoded.role,
       type: decoded.type,
       id: decoded.id,
@@ -152,6 +160,6 @@ exports.getSession = (req, res) => {
     });
   } catch (err) {
     console.log(err);
-    res.status(500).json({ error: "notoken" });
+    res.status(500).json({ success: false, error: "notoken" });
   }
 };

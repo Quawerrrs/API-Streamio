@@ -4,7 +4,11 @@ const jwt = require("jsonwebtoken");
 exports.getDemandesEntreprise = async (req, res) => {
   let conn;
   var uti_id = 0;
-  if (jwt.verify(req.cookies.token, process.env.JWT_KEY)) {
+  if (
+    req.cookies.token != null &&
+    req.cookies.token != undefined &&
+    jwt.verify(req.cookies.token, process.env.JWT_KEY)
+  ) {
     uti_id = jwt.decode(req.cookies.token).id;
   } else {
     res.status(500).json({ success: false, message: "token Invalide" });
@@ -26,7 +30,11 @@ exports.getDemandesEntreprise = async (req, res) => {
 exports.getDemandesCreateur = async (req, res) => {
   let conn;
   var uti_id = 0;
-  if (jwt.verify(req.cookies.token, process.env.JWT_KEY)) {
+  if (
+    req.cookies.token != null &&
+    req.cookies.token != undefined &&
+    jwt.verify(req.cookies.token, process.env.JWT_KEY)
+  ) {
     uti_id = jwt.decode(req.cookies.token).id;
   } else {
     res.status(500).json({ success: false, message: "token Invalide" });
@@ -62,7 +70,11 @@ exports.addDemande = async (req, res) => {
   dateButoire.setDate(dateButoire.getDate() + nbJours);
   console.log(dateButoire);
   res.status(200);
-  if (jwt.verify(req.cookies.token, process.env.JWT_KEY)) {
+  if (
+    req.cookies.token != null &&
+    req.cookies.token != undefined &&
+    jwt.verify(req.cookies.token, process.env.JWT_KEY)
+  ) {
     uti_id = jwt.decode(req.cookies.token).id;
   } else {
     res.status(500).json({ success: false, message: "token Invalide" });
@@ -121,7 +133,11 @@ exports.validDemande = async (req, res) => {
 exports.getValidDemandesCreateur = async (req, res) => {
   let conn;
   var uti_id = 0;
-  if (jwt.verify(req.cookies.token, process.env.JWT_KEY)) {
+  if (
+    req.cookies.token != null &&
+    req.cookies.token != undefined &&
+    jwt.verify(req.cookies.token, process.env.JWT_KEY)
+  ) {
     uti_id = jwt.decode(req.cookies.token).id;
   } else {
     res.status(500).json({ success: false, message: "token Invalide" });
@@ -152,7 +168,11 @@ exports.getValidDemandesCreateur = async (req, res) => {
 exports.getValidDemandesEntreprise = async (req, res) => {
   let conn;
   var uti_id = 0;
-  if (jwt.verify(req.cookies.token, process.env.JWT_KEY)) {
+  if (
+    req.cookies.token != null &&
+    req.cookies.token != undefined &&
+    jwt.verify(req.cookies.token, process.env.JWT_KEY)
+  ) {
     uti_id = jwt.decode(req.cookies.token).id;
   } else {
     res.status(500).json({ success: false, message: "token Invalide" });
