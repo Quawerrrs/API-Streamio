@@ -16,7 +16,7 @@ router.get("/getUsers", userController.getUsers); // Ajout de cette ligne
 
 // Nouvelle route pour supprimer un utilisateur
 // userRoutes.js
-router.delete("/deleteUser/:id", userController.deleteSpecificUser); // Assure-toi que cette ligne existe
+router.delete("/deleteSpecificUser/:id", userController.deleteSpecificUser); // Assure-toi que cette ligne existe
 // userRoutes.js
 router.post("/blockUser/:id", userController.blockUser);
 

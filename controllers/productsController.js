@@ -66,7 +66,11 @@ exports.deleteProduct = async (req, res) => {
 
 exports.addProduct = async (req, res) => {
   var token = req.cookies.token;
-  if (jwt.verify(token, process.env.JWT_KEY)) {
+  if (
+    req.cookies.token != null &&
+    req.cookies.token != undefined &&
+    jwt.verify(token, process.env.JWT_KEY)
+  ) {
     const fileName = req.params.file;
     var pro_uti_id = jwt.decode(token).id;
     const { nom, prix } = req.body;

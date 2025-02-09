@@ -183,7 +183,12 @@ exports.deleteUser = async (req, res) => {
   let conn;
   try {
     conn = await db.pool.getConnection();
-    var token = req.cookies.token;
+
+    if (req.cookies.token != null && req.cookies.token != undefined) {
+      var token = req.cookies.token;
+    } else {
+      res.status(500).json({ success: false, message: "token Invalide" });
+    }
     token = jwt.verify(token, process.env.JWT_SECRET);
     var decoded = jwt.decode(token);
     console.log(decoded);
@@ -290,7 +295,6 @@ exports.deleteSpecificUser = async (req, res) => {
 
   try {
     conn = await db.pool.getConnection(); // Obtenir une connexion à la base de données
-    console.log("Connexion à la base de données réussie."); // Log de connexion
 
     // Étape 1 : Récupérer le rôle de l'utilisateur
     const [user] = await conn.query(
@@ -323,18 +327,25 @@ exports.deleteSpecificUser = async (req, res) => {
     }
 
     // Étape 2 : Supprimer l'utilisateur de la table correspondant à son rôle
+    conn.beginTransaction();
     let deleteRoleQuery = "";
     if (user.role === "createurs") {
       // Correction ici pour utiliser le bon champ
       deleteRoleQuery = "DELETE FROM createurs WHERE cre_uti_id = ?";
+      await conn.query(
+        "DELETE FROM demandes inner join chaines on dem_chaine_id = cha_id WHERE cha_uti_id = ?",
+        [userId]
+      );
+      await conn.query("DELETE from chaines WHERE cha_uti_id = ?", [userId]);
     } else if (user.role === "entreprises") {
       // Correction ici pour utiliser le bon champ
       deleteRoleQuery = "DELETE FROM entreprises WHERE ent_uti_id = ?";
+      await conn.query("DELETE FROM demandes WHERE dem_ent_id = ?", [userId]);
+      await conn.query("DELETE from produits WHERE pro_uti_id = ?", [userId]);
     } else if (user.role === "administrateurs") {
       // Correction ici pour utiliser le bon champ
       deleteRoleQuery = "DELETE FROM administrateurs WHERE adm_uti_id = ?";
     }
-
     // Exécuter la requête de suppression du rôle
     console.log(
       `Suppression de l'utilisateur de la table de rôle: ${deleteRoleQuery}`
@@ -343,20 +354,20 @@ exports.deleteSpecificUser = async (req, res) => {
 
     // Étape 3 : Supprimer l'utilisateur de la table utilisateurs
     await conn.query("DELETE FROM utilisateurs WHERE uti_id = ?", [userId]);
-    console.log("Utilisateur supprimé de la table utilisateurs."); // Log de la suppression
 
+    conn.commit();
     res
       .status(200)
       .json({ success: true, message: "Utilisateur supprimé avec succès." });
   } catch (err) {
     console.error("Erreur lors de la suppression:", err.message); // Log de l'erreur
+    conn.rollback();
     res
       .status(500)
       .json({ success: false, message: "Erreur lors de la suppression." });
   } finally {
     if (conn) {
       conn.release(); // Libérer la connexion
-      console.log("Connexion libérée."); // Log de la libération de connexion
     }
   }
 };
