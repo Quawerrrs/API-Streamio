@@ -66,6 +66,7 @@ exports.addDemande = async (req, res) => {
   let conn;
   const { pro_id, msg, prix, cha_id, nbJours } = req.body;
   var uti_id = 0;
+  var ent_nom = "";
   var dateButoire = new Date();
   dateButoire.setDate(dateButoire.getDate() + nbJours);
   console.log(dateButoire);
@@ -76,6 +77,7 @@ exports.addDemande = async (req, res) => {
     jwt.verify(req.cookies.token, process.env.JWT_KEY)
   ) {
     uti_id = jwt.decode(req.cookies.token).id;
+    ent_nom = jwt.decode(req.cookies.token).nom;
   } else {
     res.status(500).json({ success: false, message: "token Invalide" });
   }
@@ -83,12 +85,23 @@ exports.addDemande = async (req, res) => {
 
   try {
     conn = await db.pool.getConnection();
+    conn.beginTransaction();
+    const createur = await conn.query(
+      "SELECT uti_id, cre_pseudo from utilisateurs inner join chaines on cha_uti_id = uti_id inner join createurs on cre_uti_id = uti_id where cha_id =?;",
+      [cha_id]
+    );
+    await conn.query(
+      "INSERT into conversations (con_uti_id_1,con_uti_id_2,con_uti_nom_1,con_uti_nom_2) VALUES (?,?,?,?);",
+      [uti_id, createur[0].uti_id, ent_nom, createur[0].cre_pseudo]
+    );
     await conn.query(
       "INSERT INTO demandes (dem_ent_uti_id, dem_pro_id, dem_description, dem_prix, dem_chaine_id, dem_valide,dem_date_limite) VALUES (?, ?, ?, ?, ?, ?,?)",
       [uti_id, pro_id, msg, prix, cha_id, 0, dateButoire]
     );
+    conn.commit();
     res.status(200).json({ success: true });
   } catch (err) {
+    conn.rollback();
     res.status(500).json({ success: false, message: err.message });
   } finally {
     if (conn) {
