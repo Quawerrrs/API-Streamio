@@ -50,7 +50,12 @@ exports.sessionStart = async (req, res) => {
             secure: false,
             sameSite: "Lax",
           })
-          .json({ success: "loggedin", redirect: "createur" });
+          .json({
+            success: "loggedin",
+            redirect: "createur",
+            token: token,
+            user: jwt.decode(token),
+          });
       } else {
         res.status(401).json({ success: "wrongpwd" });
       }
@@ -78,7 +83,12 @@ exports.sessionStart = async (req, res) => {
             secure: false,
             sameSite: "Lax",
           })
-          .json({ success: "loggedin", redirect: "entreprise" });
+          .json({
+            success: "loggedin",
+            redirect: "entreprise",
+            token: token,
+            user: jwt.decode(token),
+          });
       } else {
         res.status(401).json({ success: "wrongpwd" });
       }
@@ -106,7 +116,12 @@ exports.sessionStart = async (req, res) => {
             secure: false,
             sameSite: "Lax",
           })
-          .json({ success: "loggedin", redirect: "admin" });
+          .json({
+            success: "loggedin",
+            redirect: "admin",
+            token: token,
+            user: jwt.decode(token),
+          });
       } else {
         res.status(401).json({ success: "wrongpwd" });
       }

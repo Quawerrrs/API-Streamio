@@ -54,7 +54,7 @@ async function saveMessage(sender, receiver, content) {
       "SELECT mes_id, mes_date from messages where mes_uti_envoyeur_id = ? and mes_uti_receveur_id = ? and mes_texte = ? order by mes_date desc LIMIT 1",
       [sender, receiver, content]
     );
-    console.log(lastId);
+    // console.log(lastId);
     await conn.query(
       "UPDATE conversations set con_last_mes_id = ? where (con_uti_id_1 = ? AND con_uti_id_2 = ?) OR (con_uti_id_1 = ? AND con_uti_id_2 = ?) AND con_closed = 0;",
       [lastId[0].mes_id, sender, receiver, receiver, sender]
@@ -90,7 +90,7 @@ wss.on("connection", (ws, req) => {
     if (data.type === "register") {
       // Associer l'utilisateur à sa connexion WebSocket
       socketconnexion.set(data.senderId, ws);
-      console.log(`${data.senderId} connecté`);
+      // console.log(`${data.senderId} connecté`);
     } else if (data.type === "message") {
       const { senderId, receiverId, content } = data;
       await saveMessage(senderId, receiverId, content);
