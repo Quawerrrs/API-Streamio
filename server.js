@@ -23,7 +23,11 @@ app.use(cookieParser());
 // Middleware pour autoriser les requêtes CORS
 app.use(
   cors({
-    // origin: ["http://localhost:5173", "http://localhost:63583"],
+    origin: [
+      "http://localhost:5173",
+      "http://localhost:51213",
+      "http://localhost:57698",
+    ],
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
@@ -59,6 +63,7 @@ async function saveMessage(sender, receiver, content) {
       "UPDATE conversations set con_last_mes_id = ? where (con_uti_id_1 = ? AND con_uti_id_2 = ?) OR (con_uti_id_1 = ? AND con_uti_id_2 = ?) AND con_closed = 0;",
       [lastId[0].mes_id, sender, receiver, receiver, sender]
     );
+    return lastId[0].mes_id;
   } catch (err) {
     console.error("Erreur lors de la sauvegarde:", err);
   } finally {
@@ -72,7 +77,7 @@ async function getMessages(user1, user2) {
   try {
     conn = await db.pool.getConnection();
     return await conn.query(
-      "SELECT mes_uti_envoyeur_id as senderId,mes_uti_receveur_id as receiverId, mes_texte as content, mes_date as created_at FROM messages WHERE (mes_uti_envoyeur_id = ? AND mes_uti_receveur_id = ?) OR (mes_uti_envoyeur_id = ? AND mes_uti_receveur_id = ?) ORDER BY created_at ASC",
+      "SELECT mes_id as messageId, mes_uti_envoyeur_id as senderId,mes_uti_receveur_id as receiverId, mes_texte as content, mes_date as created_at FROM messages WHERE (mes_uti_envoyeur_id = ? AND mes_uti_receveur_id = ?) OR (mes_uti_envoyeur_id = ? AND mes_uti_receveur_id = ?) ORDER BY created_at ASC",
       [user1, user2, user2, user1]
     );
   } catch (err) {
@@ -82,7 +87,24 @@ async function getMessages(user1, user2) {
     if (conn) conn.release();
   }
 }
+async function modifMessage(messageId, content, deleteMessage = false) {
+  let conn;
+  console.log("bite");
 
+  console.log(messageId, content);
+
+  try {
+    conn = await db.pool.getConnection();
+    await conn.query("UPDATE messages SET mes_texte = ? WHERE mes_id = ?", [
+      content,
+      messageId,
+    ]);
+  } catch (err) {
+    console.error("Erreur lors de la mise à jour:", err);
+  } finally {
+    if (conn) conn.release();
+  }
+}
 wss.on("connection", (ws, req) => {
   console.log("oui");
   ws.on("message", async (message) => {
@@ -93,30 +115,81 @@ wss.on("connection", (ws, req) => {
       // console.log(`${data.senderId} connecté`);
     } else if (data.type === "message") {
       const { senderId, receiverId, content } = data;
-      await saveMessage(senderId, receiverId, content);
+      const lastId = await saveMessage(senderId, receiverId, content);
 
       // Envoyer le message uniquement au destinataire
       if (socketconnexion.has(receiverId)) {
-        socketconnexion
-          .get(receiverId)
-          .send(
-            JSON.stringify({ type: "message", senderId, receiverId, content })
-          );
+        socketconnexion.get(receiverId).send(
+          JSON.stringify({
+            type: "message",
+            senderId,
+            receiverId,
+            content,
+            messageId: lastId,
+          })
+        );
         console.log("envoyé au gars");
       }
       // Envoyer une confirmation à l'expéditeur
       if (socketconnexion.has(senderId)) {
-        socketconnexion
-          .get(senderId)
-          .send(
-            JSON.stringify({ type: "sent", senderId, receiverId, content })
-          );
+        socketconnexion.get(senderId).send(
+          JSON.stringify({
+            type: "sent",
+            senderId,
+            receiverId,
+            content,
+            messageId: lastId,
+          })
+        );
         console.log("confirmation de l'envoie");
       }
     } else if (data.type === "history") {
       // Récupérer les messages entre les deux utilisateurs
       const messages = await getMessages(data.senderId, data.receiverId);
       ws.send(JSON.stringify({ type: "history", history: messages }));
+    } else if (data.type === "typing_start" || data.type === "typing_end") {
+      const { senderId, receiverId, content } = data;
+      if (socketconnexion.has(receiverId)) {
+        socketconnexion
+          .get(receiverId)
+          .send(
+            JSON.stringify({ type: data.type, senderId, receiverId, content })
+          );
+      }
+    } else if (data.type === "modifMessage" || data.type === "deleteMessage") {
+      console.log(data);
+
+      const { senderId, receiverId, content, messageId } = data;
+      let deleted = false;
+      if (data.type === "deleteMessage") deleted = true;
+      await modifMessage(messageId, content);
+
+      // Envoyer le message uniquement au destinataire
+      if (socketconnexion.has(receiverId)) {
+        socketconnexion.get(receiverId).send(
+          JSON.stringify({
+            type: data.type,
+            senderId,
+            receiverId,
+            content,
+            messageId: messageId,
+          })
+        );
+        console.log("envoyé au gars");
+      }
+      // Envoyer une confirmation à l'expéditeur
+      if (socketconnexion.has(senderId)) {
+        socketconnexion.get(senderId).send(
+          JSON.stringify({
+            type: data.type,
+            senderId,
+            receiverId,
+            content,
+            messageId: messageId,
+          })
+        );
+        console.log("confirmation de l'envoie");
+      }
     }
   });
 
