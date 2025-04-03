@@ -154,7 +154,7 @@ exports.sessionLogout = (req, res) => {
 
 exports.getSession = (req, res) => {
   var token = req.cookies.token;
-  res.header("Access-Control-Allow-Credentials", "true");
+  // res.header("Access-Control-Allow-Credentials", "true");
   if (token == null || token == undefined)
     return res.status(403).json({ success: false, error: "notoken" });
   try {

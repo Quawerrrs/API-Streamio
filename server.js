@@ -23,6 +23,23 @@ app.use(cookieParser());
 // Middleware pour autoriser les requêtes CORS
 app.use(
   cors({
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+
+      // Allow localhost in different forms
+      if (
+        origin.startsWith("http://localhost") ||
+        origin.startsWith("http://127.0.0.1") ||
+        /^http:\/\/192\.168\./.test(origin) ||
+        /^http:\/\/10\./.test(origin) ||
+        /^http:\/\/172\.(1[6-9]|2[0-9]|3[0-1])\./.test(origin)
+      ) {
+        return callback(null, true);
+      }
+
+      callback(new Error("Not allowed by CORS"));
+    },
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
