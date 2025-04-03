@@ -81,8 +81,8 @@ exports.addDemande = async (req, res) => {
   } else {
     res.status(500).json({ success: false, message: "token Invalide" });
   }
-  console.log(uti_id, pro_id, msg, prix, cha_id);
 
+  console.log(uti_id, pro_id, msg, prix, cha_id, dateButoire);
   try {
     conn = await db.pool.getConnection();
     conn.beginTransaction();
@@ -90,18 +90,16 @@ exports.addDemande = async (req, res) => {
       "SELECT uti_id, cre_pseudo from utilisateurs inner join chaines on cha_uti_id = uti_id inner join createurs on cre_uti_id = uti_id where cha_id =?;",
       [cha_id]
     );
+
     await conn.query(
-      "INSERT into conversations (con_uti_id_1,con_uti_id_2,con_uti_nom_1,con_uti_nom_2) VALUES (?,?,?,?);",
-      [uti_id, createur[0].uti_id, ent_nom, createur[0].cre_pseudo]
-    );
-    await conn.query(
-      "INSERT INTO demandes (dem_ent_uti_id, dem_pro_id, dem_description, dem_prix, dem_chaine_id, dem_valide,dem_date_limite) VALUES (?, ?, ?, ?, ?, ?,?)",
-      [uti_id, pro_id, msg, prix, cha_id, 0, dateButoire]
+      "INSERT INTO demandes (dem_ent_uti_id, dem_pro_id, dem_description, dem_prix, dem_chaine_id,dem_date_limite) VALUES (?, ?, ?, ?, ?, ?)",
+      [uti_id, pro_id, msg, prix, cha_id, dateButoire]
     );
     conn.commit();
     res.status(200).json({ success: true });
   } catch (err) {
     conn.rollback();
+    console.log(err);
     res.status(500).json({ success: false, message: err.message });
   } finally {
     if (conn) {
@@ -130,11 +128,19 @@ exports.validDemande = async (req, res) => {
   let conn;
   try {
     conn = await db.pool.getConnection();
+    conn.beginTransaction();
+    await conn.query(
+      "INSERT into conversations (con_uti_id_1,con_uti_id_2,con_uti_nom_1,con_uti_nom_2) VALUES (?,?,?,?);",
+      [uti_id, createur[0].uti_id, ent_nom, createur[0].cre_pseudo]
+    );
     await conn.query("UPDATE demandes SET dem_valide = 1 WHERE dem_id = ?", [
       dem_id,
     ]);
+    conn.commit();
     res.status(200).json({ success: true });
   } catch (err) {
+    conn.rollback();
+    console.log(err);
     res.status(500).json({ success: false, message: err.message });
   } finally {
     if (conn) {

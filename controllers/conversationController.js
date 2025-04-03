@@ -69,3 +69,49 @@ exports.getConversations = async (req, res) => {
     }
   }
 };
+
+exports.getConversationsAdmin = async (req, res) => {
+  let conn;
+  var isAdmin = req.params.isadmin;
+  console.log(isAdmin);
+
+  try {
+    if (isAdmin) {
+      conn = await db.pool.getConnection();
+      const query = await conn.query(
+        "SELECT * from conversations where con_last_mes_id <= 0 or con_last_mes_id = NULL"
+      );
+      var result = [];
+      query.forEach((conv) => {
+        result.push({
+          con_id: conv.con_id,
+          receiverId: conv.con_uti_id_2,
+          receiverName: conv.con_uti_nom_2,
+          senderId: conv.con_uti_id_1,
+          senderName: conv.con_uti_nom_1,
+        });
+      });
+      const query2 = await conn.query(
+        "SELECT * from conversations inner join messages on con_last_mes_id = mes_id where con_last_mes_id > 0 ;"
+      );
+      query2.forEach((conv) => {
+        result.push({
+          con_id: conv.con_id,
+          receiverId: conv.con_uti_id_2,
+          receiverName: conv.con_uti_nom_2,
+          senderId: conv.con_uti_id_1,
+          senderName: conv.con_uti_nom_1,
+          lastMessage: conv.mes_texte,
+          lastMessageTime: conv.mes_date,
+        });
+      });
+      res.status(200).json(result);
+    }
+  } catch (err) {
+    console.error(err);
+  } finally {
+    if (conn) {
+      conn.release();
+    }
+  }
+};
