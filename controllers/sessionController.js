@@ -9,21 +9,43 @@ exports.sessionStart = async (req, res) => {
   try {
     conn = await db.pool.getConnection();
     const { email, password } = req.body;
+
+    // Requête pour obtenir l'utilisateur et vérifier si l'email existe
     const queryEmail = await conn.query(
-      "SELECT uti_id from utilisateurs where uti_email = ?",
+      "SELECT uti_id, uti_motdepasse, is_blocked, block_reason FROM utilisateurs WHERE uti_email = ?",
       [email]
     );
+
+    // Si l'utilisateur n'existe pas
+    if (queryEmail.length === 0) {
+      return res.status(404).json({ success: "noemail" });
+    }
+
+    const user = queryEmail[0];
+    const uti_mdp = user.uti_motdepasse;
+    const uti_id = user.uti_id;
+
+    // Vérification si le compte est bloqué
+    if (user.is_blocked) {
+      return res.status(403).json({ success: "accountBlocked", message: `Votre compte la raison est ${user.block_reason}.` });
+    }
+
+    // Requête pour récupérer les informations complètes de l'utilisateur
     const query = await conn.query(
-      "SELECT * FROM utilisateurs LEFT JOIN createurs ON uti_id = cre_uti_id AND(SELECT COUNT(*) FROM createurs WHERE cre_uti_id = ?) > 0 LEFT JOIN entreprises ON uti_id = ent_uti_id AND(SELECT COUNT(*) FROM entreprises WHERE ent_uti_id = ?) > 0 LEFT JOIN administrateurs ON uti_id = adm_uti_id WHERE uti_id = ?;",
-      [queryEmail[0].uti_id, queryEmail[0].uti_id, queryEmail[0].uti_id]
+      "SELECT * FROM utilisateurs LEFT JOIN createurs ON uti_id = cre_uti_id LEFT JOIN entreprises ON uti_id = ent_uti_id LEFT JOIN administrateurs ON uti_id = adm_uti_id WHERE uti_id = ?;",
+      [uti_id]
     );
 
-    var uti_mdp = query[0].uti_motdepasse;
-    var uti_id = query[0].uti_id;
-    // Si c'est un créateur
+    if (query.length === 0) {
+      return res.status(404).json({ success: "noemail" });
+    }
+
+    // Vérification du mot de passe et création du token JWT en fonction du type d'utilisateur
+    var token;
     if (query[0].cre_pseudo != null) {
+      // Si c'est un créateur
       if (pswHash.verify(password, uti_mdp)) {
-        var token = jwt.sign(
+        token = jwt.sign(
           {
             id: uti_id,
             type: "createur",
@@ -35,7 +57,7 @@ exports.sessionStart = async (req, res) => {
           process.env.JWT_KEY,
           { expiresIn: "4h" }
         );
-        res
+        return res
           .status(200)
           .cookie("token", token, {
             expires: new Date(Date.now() + 4 * 60 * 60 * 1000),
@@ -46,12 +68,12 @@ exports.sessionStart = async (req, res) => {
           })
           .json({ success: "loggedin", redirect: "createur" });
       } else {
-        res.status(401).json({ success: "wrongpwd" });
+        return res.status(401).json({ success: "wrongpwd" });
       }
-      // Si c'est une entreprise
     } else if (query[0].ent_nom != null) {
+      // Si c'est une entreprise
       if (pswHash.verify(password, uti_mdp)) {
-        var token = jwt.sign(
+        token = jwt.sign(
           {
             id: uti_id,
             type: "entreprise",
@@ -63,7 +85,7 @@ exports.sessionStart = async (req, res) => {
           process.env.JWT_KEY,
           { expiresIn: "4h" }
         );
-        res
+        return res
           .status(200)
           .cookie("token", token, {
             expires: new Date(Date.now() + 4 * 60 * 60 * 1000),
@@ -74,13 +96,12 @@ exports.sessionStart = async (req, res) => {
           })
           .json({ success: "loggedin", redirect: "entreprise" });
       } else {
-        res.status(401).json({ success: "wrongpwd" });
+        return res.status(401).json({ success: "wrongpwd" });
       }
-
-      // Si c'est un admin
     } else if (query[0].adm_role != null) {
+      // Si c'est un admin
       if (pswHash.verify(password, uti_mdp)) {
-        var token = jwt.sign(
+        token = jwt.sign(
           {
             id: uti_id,
             type: "admin",
@@ -91,7 +112,7 @@ exports.sessionStart = async (req, res) => {
           process.env.JWT_KEY,
           { expiresIn: "4h" }
         );
-        res
+        return res
           .status(200)
           .cookie("token", token, {
             expires: new Date(Date.now() + 4 * 60 * 60 * 1000),
@@ -102,11 +123,10 @@ exports.sessionStart = async (req, res) => {
           })
           .json({ success: "loggedin", redirect: "admin" });
       } else {
-        res.status(401).json({ success: "wrongpwd" });
+        return res.status(401).json({ success: "wrongpwd" });
       }
     } else {
-      res.status(404).json({ success: "noemail" });
-      console.log("pas d'email");
+      return res.status(404).json({ success: "noemail" });
     }
   } catch (err) {
     console.error(err);
@@ -125,10 +145,6 @@ exports.sessionLogout = (req, res) => {
   } catch (err) {
     console.error("Erreur lors de la destruction de la session:", err);
     return res.status(500).json({ error: "Internal Server Error" });
-  } finally {
-    if (conn) {
-      conn.release();
-    }
   }
 };
 
@@ -152,10 +168,6 @@ exports.getSession = (req, res) => {
       });
   } catch (err) {
     console.log(err);
-    res.status(500).json({ error: "no token" });
-  } finally {
-    if (conn) {
-      conn.release();
-    }
+    res.status(500).json({ error: 'notoken' });
   }
 };
