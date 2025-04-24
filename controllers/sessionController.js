@@ -9,8 +9,10 @@ exports.sessionStart = async (req, res) => {
   try {
     conn = await db.pool.getConnection();
     const { email, password } = req.body;
+
+    // Requête pour obtenir l'utilisateur et vérifier si l'email existe
     const queryEmail = await conn.query(
-      "SELECT uti_id from utilisateurs where uti_email = ?",
+      "SELECT uti_id, uti_motdepasse, is_blocked, block_reason FROM utilisateurs WHERE uti_email = ?",
       [email]
     );
     if (queryEmail[0] == undefined || queryEmail[0].uti_id <= 0) {
