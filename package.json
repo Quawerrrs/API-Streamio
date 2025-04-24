@@ -17,7 +17,8 @@
     "ws": "^8.18.0"
   },
   "scripts": {
-    "start": "npx nodemon server.js"
+    "start": "npx nodemon server.js",
+    "test": "jest"
   },
   "name": "back",
   "version": "1.0.0",
@@ -25,5 +26,8 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": ""
+  "description": "",
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
 }
