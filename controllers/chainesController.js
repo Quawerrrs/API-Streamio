@@ -56,18 +56,18 @@ exports.addChannel = async (req, res) => {
 };
 
 exports.getChannels = async (req, res) => {
-  const { start, length, search, sortCategory, sortOrder, subscribers } =
+  let { start, length, search, sortCategory, sortOrder, subscribers } =
     req.body;
   let conn;
   if (subscribers == null || subscribers == "") {
-    subscribers == 0;
+    subscribers = 0;
   }
   console.log(start, length, search, sortCategory, sortOrder, subscribers);
 
   try {
     conn = await db.pool.getConnection();
     if (search != null) {
-      if (sortCategory != null) {
+      if (sortCategory != null || sortCategory != "") {
         const query = await conn.query(
           `SELECT * from chaines WHERE cha_name LIKE '%${search}%' AND cha_subs >= ${
             subscribers * 1000
